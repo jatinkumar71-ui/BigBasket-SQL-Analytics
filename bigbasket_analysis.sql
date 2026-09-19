@@ -1,4 +1,9 @@
+-- =========================================
+-- DATABASE & TABLE CREATION
+-- =========================================
+
 USE bigbasket;
+
 CREATE TABLE products (
     `index` INT,
     product VARCHAR(255),
@@ -99,3 +104,110 @@ FROM products;
 SELECT *
 FROM products
 WHERE sale_price > market_price;
+
+
+-- =========================================
+-- DATA CLEANING
+-- =========================================
+
+-- 1. Check products with missing product names
+SELECT *
+FROM products
+WHERE product IS NULL OR product = '';
+
+-- Remove products with missing product names
+DELETE FROM products
+WHERE product IS NULL OR product = '';
+
+-- Verify row count after cleaning
+SELECT COUNT(*) AS total_products
+FROM products;
+
+
+-- 2. Check products with zero or negative prices
+SELECT *
+FROM products
+WHERE sale_price <= 0
+   OR market_price <= 0;
+   
+   
+   
+-- 3. Check products where sale price is greater than market price
+SELECT *
+FROM products
+WHERE sale_price > market_price;
+
+-- Remove invalid products
+DELETE FROM products
+WHERE sale_price > market_price;
+
+-- Verify row count after cleaning
+SELECT COUNT(*) AS total_products
+FROM products;
+
+
+-- 4. Check for invalid ratings
+SELECT *
+FROM products
+WHERE rating < 0
+   OR rating > 5;
+   
+
+-- 5. Find and remove exact duplicate records
+
+-- Find duplicate records
+SELECT
+    product,
+    category,
+    sub_category,
+    brand,
+    sale_price,
+    market_price,
+    type,
+    rating,
+    description,
+    COUNT(*) AS duplicate_count
+FROM products
+GROUP BY
+    product,
+    category,
+    sub_category,
+    brand,
+    sale_price,
+    market_price,
+    type,
+    rating,
+    description
+HAVING COUNT(*) > 1
+ORDER BY duplicate_count DESC;
+
+
+-- Remove extra duplicate rows
+DELETE FROM products
+WHERE `index` IN (
+    SELECT `index`
+    FROM (
+        SELECT
+            `index`,
+            ROW_NUMBER() OVER (
+                PARTITION BY
+                    product,
+                    category,
+                    sub_category,
+                    brand,
+                    sale_price,
+                    market_price,
+                    type,
+                    rating,
+                    description
+                ORDER BY `index`
+            ) AS rn
+        FROM products
+    ) AS ranked
+    WHERE rn > 1
+);
+
+
+-- Verify total rows after removing duplicates
+SELECT COUNT(*) AS total_products
+FROM products;
