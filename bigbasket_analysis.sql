@@ -211,3 +211,139 @@ WHERE `index` IN (
 -- Verify total rows after removing duplicates
 SELECT COUNT(*) AS total_products
 FROM products;
+
+
+
+-- =========================================
+-- DATA ANALYSIS
+-- =========================================
+
+-- 1. Top 10 products with highest discount percentage
+SELECT
+    product,
+    brand,
+    category,
+    sale_price,
+    market_price,
+    ROUND(
+        (market_price - sale_price) / market_price * 100,
+        2
+    ) AS discount_percentage
+FROM products
+WHERE market_price > 0
+ORDER BY discount_percentage DESC
+LIMIT 10;
+
+
+-- Q2. Products with high MRP but low discount
+SELECT
+    product,
+    brand,
+    category,
+    market_price,
+    sale_price,
+    ROUND(
+        (market_price - sale_price) / market_price * 100,
+        2
+    ) AS discount_percentage
+FROM products
+WHERE market_price > 1000
+  AND ((market_price - sale_price) / market_price * 100) < 10
+ORDER BY market_price DESC;
+
+
+-- Q3. Average sale price by category
+SELECT
+    category,
+    ROUND(AVG(sale_price), 2) AS average_sale_price
+FROM products
+GROUP BY category
+ORDER BY average_sale_price DESC;
+
+
+-- Q4. Average discount percentage by category
+SELECT
+    category,
+    ROUND(
+        AVG((market_price - sale_price) / market_price * 100),
+        2
+    ) AS average_discount_percentage
+FROM products
+WHERE market_price > 0
+GROUP BY category
+ORDER BY average_discount_percentage DESC;
+
+-- Q5. Top 10 brands by product count
+SELECT
+    brand,
+    COUNT(*) AS product_count
+FROM products
+GROUP BY brand
+ORDER BY product_count DESC
+LIMIT 10;
+
+-- Q6. Top 10 most expensive products
+SELECT
+    product,
+    brand,
+    category,
+    sale_price
+FROM products
+ORDER BY sale_price DESC
+LIMIT 10;
+
+
+-- Q7. Products with rating 4.5 or higher
+SELECT
+    product,
+    brand,
+    category,
+    sale_price,
+    rating
+FROM products
+WHERE rating >= 4.5
+ORDER BY rating DESC, sale_price ASC;
+
+
+-- Q8. Category-wise rating analysis
+SELECT
+    category,
+    ROUND(AVG(rating), 2) AS average_rating,
+    COUNT(*) AS product_count
+FROM products
+GROUP BY category
+ORDER BY average_rating DESC;
+
+
+
+-- Q9. Highly rated products with price below ₹500
+SELECT
+    product,
+    brand,
+    category,
+    sale_price,
+    rating
+FROM products
+WHERE rating >= 4.5
+  AND sale_price < 500
+ORDER BY rating DESC, sale_price ASC;
+
+
+
+-- Q10. Find the Most Expensive Product in Each Category
+SELECT
+    p.category,
+    p.product,
+    p.brand,
+    p.sale_price
+FROM products p
+JOIN (
+    SELECT
+        category,
+        MAX(sale_price) AS max_price
+    FROM products
+    GROUP BY category
+) m
+ON p.category = m.category
+AND p.sale_price = m.max_price
+ORDER BY p.sale_price DESC;
